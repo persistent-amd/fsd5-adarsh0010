@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Class Timetable</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 10px;
+      min-width: 100px;
+      vertical-align: top;
+    }
+    th {
+      background: #f4f4f4;
+    }
+    .controls {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .controls input, .controls select, .controls button {
+      padding: 5px 10px;
+    }
+    .session {
+      background: #4caf50;
+      color: white;
+      border-radius: 4px;
+      padding: 5px;
+      margin: 2px 0;
+      cursor: pointer;
+      white-space: pre-line;
+    }
+    .action-btn {
+      margin-left: 5px;
+      padding: 2px 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Weekly Class Timetable</h1>
+
+  <div class="controls">
+    <input type="text" id="subject" placeholder="Subject">
+    <input type="text" id="teacher" placeholder="Teacher">
+    <input type="text" id="room" placeholder="Room">
+    <select id="day">
+      <option value="Monday">Monday</option>
+      <option value="Tuesday">Tuesday</option>
+      <option value="Wednesday">Wednesday</option>
+      <option value="Thursday">Thursday</option>
+      <option value="Friday">Friday</option>
+    </select>
+    <input type="time" id="start">
+    <input type="time" id="end">
+    <button onclick="addSession()">Add Session</button>
+    <button onclick="updateSession()">Edit Selected</button>
+  </div>
+
+  <table id="timetable">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Monday</th>
+        <th>Tuesday</th>
+        <th>Wednesday</th>
+        <th>Thursday</th>
+        <th>Friday</th>
+      </tr>
+    </thead>
+    <tbody id="timetable-body">
+      <!-- Rows will be generated dynamically -->
+    </tbody>
+  </table>
+
+  <script>
+    const startHour = 10;
+    const endHour = 15;
+    const slotMinutes = 60;
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    let selectedSession = null;
+
+    function generateRows() {
+      const tbody = document.getElementById("timetable-body");
+      for (let h = startHour; h < endHour; h++) {
+        const tr = document.createElement("tr");
+        const timeCell = document.createElement("td");
+        timeCell.textContent = `${String(h).padStart(2,'0')}:00 - ${String(h+1).padStart(2,'0')}:00`;
+        tr.appendChild(timeCell);
+        for (let d = 0; d < days.length; d++) {
+          const td = document.createElement("td");
+          td.dataset.day = days[d];
+          td.dataset.hour = h;
+
+          // Add click event to empty cells
+          td.addEventListener("click", function(e) {
+            if (e.target === td) { // only if clicking the empty cell, not a session div
+              document.getElementById("day").value = td.dataset.day;
+              document.getElementById("start").value = `${String(td.dataset.hour).padStart(2,'0')}:00`;
+              document.getElementById("end").value = `${String(parseInt(td.dataset.hour)+1).padStart(2,'0')}:00`;
+              document.getElementById("subject").focus();
+            }
+          });
+
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      }
+    }
+
+    function addSession() {
+      const subject = document.getElementById("subject").value;
+      const teacher = document.getElementById("teacher").value;
+      const room = document.getElementById("room").value;
+      const day = document.getElementById("day").value;
+      const start = document.getElementById("start").value;
+      const end = document.getElementById("end").value;
+
+      if (!subject || !start || !end) {
+        alert("Please enter subject and start/end times.");
+        return;
+      }
+
+      const startHourVal = parseInt(start.split(":")[0]);
+      const cell = document.querySelector(`td[data-day='${day}'][data-hour='${startHourVal}']`);
+      if (cell) {
+        const div = document.createElement("div");
+        div.className = "session";
+        div.textContent = `${subject} (${start}-${end})\n${teacher ? teacher : ""}${room ? " • " + room : ""}`;
+        div.dataset.subject = subject;
+        div.dataset.teacher = teacher;
+        div.dataset.room = room;
+        div.dataset.day = day;
+        div.dataset.start = start;
+        div.dataset.end = end;
+
+        div.onclick = (e) => {
+          e.stopPropagation(); // prevent cell click
+          if (selectedSession === div) {
+            div.style.outline = "";
+            selectedSession = null;
+          } else {
+            if (selectedSession) selectedSession.style.outline = "";
+            selectedSession = div;
+            div.style.outline = "2px solid yellow";
+          }
+        };
+
+        cell.appendChild(div);
+      }
+    }
+
+    function updateSession() {
+      if (!selectedSession) {
+        alert("Please select a session to edit by clicking on it.");
+        return;
+      }
+      document.getElementById("subject").value = selectedSession.dataset.subject;
+      document.getElementById("teacher").value = selectedSession.dataset.teacher;
+      document.getElementById("room").value = selectedSession.dataset.room;
+      document.getElementById("day").value = selectedSession.dataset.day;
+      document.getElementById("start").value = selectedSession.dataset.start;
+      document.getElementById("end").value = selectedSession.dataset.end;
+
+      // Delete the old one so user can add again with updated values
+      selectedSession.remove();
+      selectedSession = null;
+    }
+
+    generateRows();
+  </script>
+</body>
+</html>
